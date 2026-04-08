@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 pub trait AdelicComponent {
     fn is_coherent(&self, rho: f64) -> bool;
 }
