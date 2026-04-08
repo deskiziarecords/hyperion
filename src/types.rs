@@ -1,3 +1,5 @@
+use chrono::{DateTime, Utc};
+
 pub trait AdelicComponent {
     fn is_coherent(&self, rho: f64) -> bool;
 }
@@ -9,6 +11,25 @@ pub struct PriceFrame {
     pub low: f64,
     pub close: f64,
     pub atr: f64,
+}
+
+#[derive(Debug, Clone)]
+pub struct Candle {
+    pub time: DateTime<Utc>,
+    pub open: f64,
+    pub high: f64,
+    pub low: f64,
+    pub close: f64,
+    pub volume: f64,
+    pub pattern: Pattern,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Pattern {
+    I,
+    U,
+    B,
+    D,
 }
 
 pub struct MarketContext {
