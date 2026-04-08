@@ -14,21 +14,32 @@ impl OandaStream {
     pub fn new() -> Self {
         let now = Utc::now();
         let mut ticks = Vec::new();
+        let mut current_price = 1.1550;
 
-        // Generate some mock EUR/USD ticks
-        for i in 0..200 {
-            let mut price = 1.1550 + (i as f64 * 0.0001).sin();
+        // Generate more realistic EUR/USD ticks with noise and spikes
+        for i in 0..600 {
+            // Base noise
+            let noise = ((i as f64 * 0.1).sin() * 0.0002) + ((i as f64 * 0.5).cos() * 0.0001);
+            current_price += noise;
 
-            // Introduce an "institutional move" at i=100
-            if i >= 100 && i < 106 {
-                price += (i - 100) as f64 * 0.0010;
-            } else if i >= 106 {
-                price += 0.0060;
+            // Occasional trend
+            if i > 100 && i < 200 {
+                current_price += 0.00005; // Gentle uptrend
+            }
+
+            // Sudden Momentum Spike
+            if i > 300 && i < 310 {
+                current_price += 0.0005;
+            }
+
+            // Reversal
+            if i > 450 && i < 550 {
+                current_price -= 0.00008; // Downtrend
             }
 
             ticks.push(Tick {
                 time: now + chrono::Duration::seconds(i * 10),
-                price,
+                price: current_price,
             });
         }
 
