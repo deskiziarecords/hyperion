@@ -18,7 +18,6 @@ pub struct PriceFrame {
 #[pyclass]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Candle {
-    #[pyo3(get)]
     pub time: DateTime<Utc>,
     #[pyo3(get)]
     pub open: f64,
@@ -32,6 +31,14 @@ pub struct Candle {
     pub volume: f64,
     #[pyo3(get)]
     pub pattern: Pattern,
+}
+
+#[pymethods]
+impl Candle {
+    #[getter]
+    fn get_time(&self) -> String {
+        self.time.to_rfc3339()
+    }
 }
 
 #[pyclass]
