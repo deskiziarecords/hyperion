@@ -42,12 +42,12 @@ impl Candle {
 }
 
 #[pyclass]
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub enum Pattern {
-    I,
-    U,
-    B,
-    D,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Pattern {
+    #[pyo3(get)]
+    pub name: String,
+    #[pyo3(get)]
+    pub strength: f64,
 }
 
 pub struct MarketContext {
