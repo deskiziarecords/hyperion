@@ -1,4 +1,6 @@
 use chrono::{DateTime, Utc};
+use pyo3::prelude::*;
+use serde::{Deserialize, Serialize};
 
 pub trait AdelicComponent {
     fn is_coherent(&self, rho: f64) -> bool;
@@ -13,18 +15,27 @@ pub struct PriceFrame {
     pub atr: f64,
 }
 
-#[derive(Debug, Clone)]
+#[pyclass]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Candle {
+    #[pyo3(get)]
     pub time: DateTime<Utc>,
+    #[pyo3(get)]
     pub open: f64,
+    #[pyo3(get)]
     pub high: f64,
+    #[pyo3(get)]
     pub low: f64,
+    #[pyo3(get)]
     pub close: f64,
+    #[pyo3(get)]
     pub volume: f64,
+    #[pyo3(get)]
     pub pattern: Pattern,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[pyclass]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Pattern {
     I,
     U,

@@ -1,9 +1,15 @@
 [package]
-name = "hyperion-adco"
+name = "hyperion-sentinel"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "hyperion_sentinel"
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
-chrono = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
 # For high-performance atomic operations if expanding to multi-core
 parking_lot = "0.12"
+pyo3 = { version = "0.20", features = ["extension-module", "chrono"] }
+serde = { version = "1.0", features = ["derive"] }
