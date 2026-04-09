@@ -1,7 +1,7 @@
-use hyperion_adco::data::realtime::OandaStream;
-use hyperion_adco::data::candle_builder::CandleBuilder;
-use hyperion_adco::engine::execution::ExecutionEngine;
-use hyperion_adco::routing::SchurRouter;
+use hyperion_sentinel::data::realtime::OandaStream;
+use hyperion_sentinel::data::candle_builder::CandleBuilder;
+use hyperion_sentinel::engine::execution::ExecutionEngine;
+use hyperion_sentinel::routing::SchurRouter;
 
 fn main() {
     println!("🚀 Starting Hyperion Orchestrator...");
