@@ -26,6 +26,11 @@ class GMOSOrchestrator:
         self.brain = AdelicKoopmanSynchronizer()
         self.detector = ReversePeriodDetector()
 
+        # Warm up the JAX JIT before the market opens
+        dummy_data = jnp.zeros((60,))
+        _ = self.brain.compute_sync(dummy_data)
+        logger.info("JAX Kernels Hot and Ready.")
+
         # Initialize the Sentinel (Rust)
         # Pass your TwelveData API Key and target symbol
         self.engine = sentinel.SentinelEngine(api_key="YOUR_KEY", symbol="EUR/USD")
@@ -65,7 +70,8 @@ class GMOSOrchestrator:
                 body = abs(current_bar.close - current_bar.open)
                 range_total = current_bar.high - current_bar.low
 
-                is_legal = (body / (range_total + 1e-9)) < 0.70
+                # Refined threshold for NFP/NY Open volatility
+                is_legal = (body / (range_total + 1e-9)) < 0.75
 
                 # 5. EXECUTION DECISION
                 if is_legal and stability > 0.85:
