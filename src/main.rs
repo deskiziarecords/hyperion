@@ -12,7 +12,7 @@ fn main() {
 
     while let Some(tick) = stream.next_tick() {
         if let Some(candle) = builder.update(tick.price, tick.time) {
-            let pattern = candle.pattern;
+            let pattern = candle.pattern.clone();
             let time = candle.time;
 
             if let Some(signal) = engine.process_candle(candle) {

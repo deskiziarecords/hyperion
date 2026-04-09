@@ -59,13 +59,15 @@ impl CandleBuilder {
 }
 
 fn classify_pattern(open: f64, close: f64) -> Pattern {
-    if close > open {
-        Pattern::U
+    let (name, strength) = if close > open {
+        ("U".to_string(), 1.0)
     } else if close < open {
-        Pattern::D
+        ("D".to_string(), 1.0)
     } else {
-        Pattern::I
-    }
+        ("I".to_string(), 0.0)
+    };
+
+    Pattern { name, strength }
 }
 
 #[cfg(test)]
