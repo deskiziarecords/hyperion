@@ -63,7 +63,7 @@ class GMOSOrchestrator:
 
                 # 3. COMPUTE ADELIC BIAS (THE BRAIN)
                 # This uses your XLA-fused Mandra-Gate primitives
-                bias, stability = self.brain.compute_sync(price_data)
+                bias, stability, q_t_size = self.brain.compute_sync(price_data)
 
                 # 4. LAMBDA-6 DISPLACEMENT VETO (THE SAFETY)
                 current_bar = bars[-1]
@@ -77,8 +77,8 @@ class GMOSOrchestrator:
                 if is_legal and stability > 0.85:
                     signal = "BUY" if bias > 0 else "SELL"
                     # Pass the signal BACK to Rust for sub-millisecond execution
-                    self.engine.execute_trade(signal, size=0.01)
-                    logger.info(f"EXECUTION: {signal} | Stability: {stability:.4f}")
+                    self.engine.execute_trade(signal, size=q_t_size)
+                    logger.info(f"EXECUTION: {signal} | Size: {q_t_size} | Stability: {stability:.4f}")
                 else:
                     # Veto active or unstable manifold
                     self.engine.cancel_all_pending()
