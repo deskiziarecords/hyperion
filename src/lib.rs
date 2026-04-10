@@ -83,7 +83,9 @@ impl SentinelEngine {
     }
 
     fn execute_trade(&self, signal: String, size: f64) {
-        println!("🚀 [RUST EXECUTION] {} | Size: {}", signal, size);
+        let (dark, lit) = crate::routing::SchurRouter::route(size);
+        println!("🚀 [RUST EXECUTION] {} | Total Size: {:.0}", signal, size);
+        println!("   ↳ Routing: Dark Pool (61.8%)={:.0}, Lit Venue={:.0}", dark, lit);
     }
 
     fn cancel_all_pending(&self) {
