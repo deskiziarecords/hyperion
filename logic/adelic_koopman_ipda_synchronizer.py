@@ -11,4 +11,5 @@ class AdelicKoopmanSynchronizer:
         # In a real scenario, this would involve complex JAX transformations
         bias = jnp.mean(jnp.diff(price_data))
         stability = 0.9  # Mock stability
-        return float(bias), float(stability)
+        size = 1000000.0 # Mock Mandra Q_t size
+        return float(bias), float(stability), float(size)
