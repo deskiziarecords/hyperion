@@ -44,5 +44,8 @@ cargo run
 cargo test
 ```
 
+## Mission Scenarios
+For a detailed breakdown of how the system handles real-world market conditions, including impulsive breakouts, large-volume routing, and regime fractures, see [EXAMPLES.md](EXAMPLES.md).
+
 ## Mathematical Philosophy
 Hyperion's design philosophy is rooted in the idea that market price delivery follows a deterministic, non-linear continuum. By using Hamiltonian energy thresholds, it filters out noise and focuses on institutional-scale liquidity cycles.

@@ -44,10 +44,7 @@ class GMOSOrchestrator:
         self.engine.start()
 
         try:
-            # Add a counter for demo purposes to avoid infinite loop in CI
-            counter = 0
-            while self.is_active and counter < 50:
-                counter += 1
+            while self.is_active:
                 # 1. PULL CLEAN DATA FROM RUST
                 # Rust returns a list of Bar objects (OHLCV + OFI)
                 bars = self.engine.get_latest_bars(lookback=60)
@@ -71,7 +68,8 @@ class GMOSOrchestrator:
                 range_total = current_bar.high - current_bar.low
 
                 # Refined threshold for NFP/NY Open volatility
-                is_legal = (body / (range_total + 1e-9)) < 0.75
+                # VETO if wicks are too large (body-to-range ratio must be > 0.75)
+                is_legal = (body / (range_total + 1e-9)) > 0.75
 
                 # 5. EXECUTION DECISION
                 if is_legal and stability > 0.85:
@@ -83,7 +81,9 @@ class GMOSOrchestrator:
                     # Veto active or unstable manifold
                     self.engine.cancel_all_pending()
                     if not is_legal:
-                        logger.warning("VETO: λ6 Displacement Violation (Impulsive Wick)")
+                        logger.warning(f"VETO: λ6 Displacement Violation (Body/Range Ratio: {(body/range_total):.2f})")
+                    if stability <= 0.85:
+                        logger.error(f"CIRCUIT BREAKER: Regime Fracture Detected (Stability: {stability:.4f})")
 
                 # Frequency control (sync with bar close)
                 time.sleep(0.5)

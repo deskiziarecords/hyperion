@@ -59,7 +59,9 @@ impl CandleBuilder {
 }
 
 fn classify_pattern(open: f64, close: f64) -> Pattern {
-    let (name, strength) = if close > open {
+    let (name, strength) = if (close - open).abs() > 0.0010 { // Significant move
+        ("B".to_string(), 1.5)
+    } else if close > open {
         ("U".to_string(), 1.0)
     } else if close < open {
         ("D".to_string(), 1.0)
