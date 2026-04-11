@@ -56,11 +56,61 @@ pub struct MarketContext {
     pub irl_fvg: f64,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum ContinuumState {
-    Consolidation,
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
+#[pyclass]
+pub enum Phase {
+    Accumulation,
+    Manipulation,
+    Distribution,
     Expansion,
     Retracement,
     Reversal,
-    Stasis,
+    Flat,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[pyclass]
+pub enum Action {
+    Buy,
+    Sell,
+    Flat,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[pyclass]
+pub struct Bar {
+    pub open: f64,
+    pub high: f64,
+    pub low: f64,
+    pub close: f64,
+    pub volume: f64,
+    pub ts: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[pyclass]
+pub struct Signal {
+    pub action: Action,
+    pub size: f64,
+    pub phase: Phase,
+    pub kill_zone: bool,
+    pub timestamp: f64,
+    pub price: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[pyclass]
+pub struct Order {
+    pub id: String,
+    pub action: Action,
+    pub size: f64,
+    pub ref_price: f64,
+    pub timestamp: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RawTick {
+    pub price: f64,
+    pub volume: f64,
+    pub ts_ms: i64,
 }

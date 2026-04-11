@@ -1,6 +1,7 @@
 pub mod types;
 pub mod continuum;
 pub mod routing;
+pub mod brokers;
 
 pub mod data {
     pub mod candle_builder;
