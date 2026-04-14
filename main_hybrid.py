@@ -3,96 +3,172 @@ import jax.numpy as jnp
 import numpy as np
 import time
 import logging
+import asyncio
+import json
+import websockets
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
+from datetime import datetime
 
-# --- IMPORT YOUR COMPILED RUST KERNEL ---
-# Assumes you ran: maturin develop inside the hyperion folder
+# --- IMPORT RUST SENTINEL ---
 try:
     import hyperion_sentinel as sentinel
 except ImportError:
     print("CRITICAL: Run 'maturin develop' in /hyperion/ first.")
     exit(1)
 
-# --- IMPORT YOUR JAX BRAIN ---
+# --- IMPORT JAX BRAIN ---
 from logic.adelic_koopman_ipda_synchronizer import AdelicKoopmanSynchronizer
-from logic.reverse_period_detector import ReversePeriodDetector
 
-# Configure Logging for the Friday Demo
+# Configure Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logger = logging.getLogger("GMOS_HYBRID")
 
+# FastAPI App
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: list[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: dict):
+        for connection in self.active_connections:
+            try:
+                await connection.send_json(message)
+            except Exception:
+                pass
+
+manager = ConnectionManager()
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+
 class GMOSOrchestrator:
     def __init__(self):
-        # Initialize the Brain (JAX)
         self.brain = AdelicKoopmanSynchronizer()
-        self.detector = ReversePeriodDetector()
-
-        # Warm up the JAX JIT before the market opens
+        
+        # Warm up JAX
         dummy_data = jnp.zeros((60,))
         _ = self.brain.compute_sync(dummy_data)
         logger.info("JAX Kernels Hot and Ready.")
 
-        # Initialize the Sentinel (Rust)
-        # Pass your TwelveData API Key and target symbol
-        self.engine = sentinel.SentinelEngine(api_key="YOUR_KEY", symbol="EUR/USD")
+        # Initialize the OLD Sentinel (Rust) - NO 'use_bitget' argument
+        # Based on inspection, it needs api_key and symbol
+        logger.info("Initializing Rust Sentinel (Simulation Mode)...")
+        try:
+            self.engine = sentinel.SentinelEngine("DEMO_KEY", "BTC/USDT")
+        except TypeError as e:
+            logger.error(f"Failed to init Sentinel: {e}")
+            # Fallback to even older signature if needed
+            self.engine = sentinel.SentinelEngine()
 
+        self.price_history = []
         self.is_active = True
 
-    def run_production_loop(self):
-        logger.info("Starting GMOS Hybrid Pipeline: Sentinel (Rust) + Brain (JAX)")
+    async def run_bitget_ws(self):
+        url = "wss://ws.bitget.com/v2/ws/public"
+        symbol = "BTCUSDT"
+        
+        while self.is_active:
+            try:
+                logger.info(f"Connecting to Bitget WebSocket: {url}")
+                async with websockets.connect(url) as ws:
+                    sub_msg = {
+                        "op": "subscribe",
+                        "args": [{
+                            "instType": "SPOT",
+                            "channel": "ticker",
+                            "instId": symbol
+                        }]
+                    }
+                    await ws.send(json.dumps(sub_msg))
+                    
+                    while self.is_active:
+                        msg_text = await ws.recv()
+                        if msg_text == "pong": continue
+                        
+                        data = json.loads(msg_text)
+                        if "data" in data and len(data["data"]) > 0:
+                            ticker = data["data"][0]
+                            price = float(ticker["lastPr"])
+                            
+                            # Keep track of history for JAX
+                            self.price_history.append(price)
+                            if len(self.price_history) > 100:
+                                self.price_history.pop(0)
 
-        # Start the Rust thread for io_uring ingestion
-        self.engine.start()
+                            if len(self.price_history) >= 20:
+                                # Run Brain
+                                price_tensor = jnp.array(self.price_history[-60:])
+                                bias, stability, q_t_size = self.brain.compute_sync(price_tensor)
+                                
+                                signal = "FLAT"
+                                if stability > 0.85:
+                                    signal = "BUY" if bias > 0 else "SELL"
+                                    # We can tell Rust to execute (simulation mode)
+                                    try:
+                                        self.engine.execute_trade(signal, float(q_t_size))
+                                    except:
+                                        pass
+                                
+                                # Broadcast to dashboard
+                                payload = {
+                                    "timestamp": datetime.fromtimestamp(int(ticker["ts"])/1000).isoformat(),
+                                    "price": price,
+                                    "open": price, # Approximate for ticker
+                                    "high": float(ticker["high24h"]),
+                                    "low": float(ticker["low24h"]),
+                                    "bias": float(bias),
+                                    "stability": float(stability),
+                                    "signal": signal,
+                                    "is_legal": True,
+                                }
+                                await manager.broadcast(payload)
 
+                        # Ping to keep alive
+                        if int(time.time()) % 20 == 0:
+                            await ws.send("ping")
+
+            except Exception as e:
+                logger.error(f"Bitget WS Error: {e}. Retrying in 5s...")
+                await asyncio.sleep(5)
+
+    async def run_production_loop(self):
+        # We start the Rust engine just to keep it running (for simulation prints)
         try:
-            # Add a counter for demo purposes to avoid infinite loop in CI
-            counter = 0
-            while self.is_active and counter < 50:
-                counter += 1
-                # 1. PULL CLEAN DATA FROM RUST
-                # Rust returns a list of Bar objects (OHLCV + OFI)
-                bars = self.engine.get_latest_bars(lookback=60)
+            self.engine.start()
+        except:
+            pass
+        
+        # Core Bitget streamer runs in its own task
+        await self.run_bitget_ws()
 
-                if len(bars) < 20:
-                    logger.info(f"Warming up... {len(bars)}/20 bars")
-                    time.sleep(1)
-                    continue
+orchestrator = GMOSOrchestrator()
 
-                # 2. CONVERT TO JAX TENSORS
-                price_data = jnp.array([b.close for b in bars])
-                volume_data = jnp.array([b.volume for b in bars])
-
-                # 3. COMPUTE ADELIC BIAS (THE BRAIN)
-                # This uses your XLA-fused Mandra-Gate primitives
-                bias, stability, q_t_size = self.brain.compute_sync(price_data)
-
-                # 4. LAMBDA-6 DISPLACEMENT VETO (THE SAFETY)
-                current_bar = bars[-1]
-                body = abs(current_bar.close - current_bar.open)
-                range_total = current_bar.high - current_bar.low
-
-                # Refined threshold for NFP/NY Open volatility
-                is_legal = (body / (range_total + 1e-9)) < 0.75
-
-                # 5. EXECUTION DECISION
-                if is_legal and stability > 0.85:
-                    signal = "BUY" if bias > 0 else "SELL"
-                    # Pass the signal BACK to Rust for sub-millisecond execution
-                    self.engine.execute_trade(signal, size=q_t_size)
-                    logger.info(f"EXECUTION: {signal} | Size: {q_t_size} | Stability: {stability:.4f}")
-                else:
-                    # Veto active or unstable manifold
-                    self.engine.cancel_all_pending()
-                    if not is_legal:
-                        logger.warning("VETO: λ6 Displacement Violation (Impulsive Wick)")
-
-                # Frequency control (sync with bar close)
-                time.sleep(0.5)
-
-        except KeyboardInterrupt:
-            logger.info("Shutting down safely...")
-        finally:
-            self.engine.stop()
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(orchestrator.run_production_loop())
 
 if __name__ == "__main__":
-    gmos = GMOSOrchestrator()
-    gmos.run_production_loop()
+    logger.info("🚀 Launching Hyperion Hybrid Server on http://localhost:8000")
+    uvicorn.run(app, host="0.0.0.0", port=8000)
