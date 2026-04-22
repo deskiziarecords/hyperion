@@ -1,0 +1,212 @@
+﻿cargo : warning: output 
+filename collision at C:\Us
+ers\Roberto\Documents\hyper
+ion\target\debug\deps\hyper
+ion_sentinel.pdb
+At line:1 char:1
++ cargo build 2>&1 | 
+Out-File -FilePath 
+build_log.txt -Encoding 
+utf8; G ...
++ ~~~~~~~~~~~~~~~~
+    + CategoryInfo         
+     : NotSpecified: (war  
+  ning: output...on_sent   
+ inel.pdb:String) [], R    
+emoteException
+    + FullyQualifiedErrorI 
+   d : NativeCommandError
+ 
+  |
+  = note: the bin target 
+`hyperion-sentinel` in 
+package `hyperion-sentinel 
+v0.1.0 (C:\Users\Roberto\Do
+cuments\hyperion)` has the 
+same output filename as 
+the lib target 
+`hyperion_sentinel` in 
+package `hyperion-sentinel 
+v0.1.0 (C:\Users\Roberto\Do
+cuments\hyperion)`
+  = note: if this looks 
+unexpected, it may be a 
+bug in Cargo. Please file 
+a bug report at https://git
+hub.com/rust-lang/cargo/iss
+ues/ with as much 
+information as you can 
+provide.
+  = note: cargo 1.94.1 
+(29ea6fb6a 2026-03-24) 
+running on 
+`x86_64-pc-windows-msvc` 
+target 
+`x86_64-pc-windows-msvc`
+  = note: first unit: Unit 
+{ pkg: Package { id: 
+PackageId { name: 
+"hyperion-sentinel", 
+version: "0.1.0", source: "
+C:\\Users\\Roberto\\Documen
+ts\\hyperion" }, ..: ".." 
+}, target: TargetInner { 
+name: "hyperion-sentinel", 
+doc: true, ..: with_path("C
+:\\Users\\Roberto\\Document
+s\\hyperion\\src\\main.rs",
+ Edition2021) }, profile: 
+Profile { ..: 
+default_dev() }, kind: 
+Host, mode: Build, 
+features: [], rustflags: 
+[], rustdocflags: [], 
+links_overrides: {}, 
+artifact: false, artifact_t
+arget_for_features: None, 
+is_std: false, dep_hash: 
+920516909751335728 }
+  = note: second unit: 
+Unit { pkg: Package { id: 
+PackageId { name: 
+"hyperion-sentinel", 
+version: "0.1.0", source: "
+C:\\Users\\Roberto\\Documen
+ts\\hyperion" }, ..: ".." 
+}, target: TargetInner { 
+..: lib_target("hyperion_se
+ntinel", ["cdylib", 
+"rlib"], "C:\\Users\\Robert
+o\\Documents\\hyperion\\src
+\\lib.rs", Edition2021) }, 
+profile: Profile { ..: 
+default_dev() }, kind: 
+Host, mode: Build, 
+features: [], rustflags: 
+[], rustdocflags: [], 
+links_overrides: {}, 
+artifact: false, artifact_t
+arget_for_features: None, 
+is_std: false, dep_hash: 
+10753929456641630674 }
+warning: output filename 
+collision at C:\Users\Rober
+to\Documents\hyperion\targe
+t\debug\hyperion_sentinel.p
+db
+  |
+  = note: the bin target 
+`hyperion-sentinel` in 
+package `hyperion-sentinel 
+v0.1.0 (C:\Users\Roberto\Do
+cuments\hyperion)` has the 
+same output filename as 
+the lib target 
+`hyperion_sentinel` in 
+package `hyperion-sentinel 
+v0.1.0 (C:\Users\Roberto\Do
+cuments\hyperion)`
+  = note: if this looks 
+unexpected, it may be a 
+bug in Cargo. Please file 
+a bug report at https://git
+hub.com/rust-lang/cargo/iss
+ues/ with as much 
+information as you can 
+provide.
+  = note: cargo 1.94.1 
+(29ea6fb6a 2026-03-24) 
+running on 
+`x86_64-pc-windows-msvc` 
+target 
+`x86_64-pc-windows-msvc`
+  = note: first unit: Unit 
+{ pkg: Package { id: 
+PackageId { name: 
+"hyperion-sentinel", 
+version: "0.1.0", source: "
+C:\\Users\\Roberto\\Documen
+ts\\hyperion" }, ..: ".." 
+}, target: TargetInner { 
+name: "hyperion-sentinel", 
+doc: true, ..: with_path("C
+:\\Users\\Roberto\\Document
+s\\hyperion\\src\\main.rs",
+ Edition2021) }, profile: 
+Profile { ..: 
+default_dev() }, kind: 
+Host, mode: Build, 
+features: [], rustflags: 
+[], rustdocflags: [], 
+links_overrides: {}, 
+artifact: false, artifact_t
+arget_for_features: None, 
+is_std: false, dep_hash: 
+920516909751335728 }
+  = note: second unit: 
+Unit { pkg: Package { id: 
+PackageId { name: 
+"hyperion-sentinel", 
+version: "0.1.0", source: "
+C:\\Users\\Roberto\\Documen
+ts\\hyperion" }, ..: ".." 
+}, target: TargetInner { 
+..: lib_target("hyperion_se
+ntinel", ["cdylib", 
+"rlib"], "C:\\Users\\Robert
+o\\Documents\\hyperion\\src
+\\lib.rs", Edition2021) }, 
+profile: Profile { ..: 
+default_dev() }, kind: 
+Host, mode: Build, 
+features: [], rustflags: 
+[], rustdocflags: [], 
+links_overrides: {}, 
+artifact: false, artifact_t
+arget_for_features: None, 
+is_std: false, dep_hash: 
+10753929456641630674 }
+   Compiling pyo3-ffi 
+v0.20.3
+error: failed to run 
+custom build command for 
+`pyo3-ffi v0.20.3`
+
+Caused by:
+  process didn't exit 
+successfully: `C:\Users\Rob
+erto\Documents\hyperion\tar
+get\debug\build\pyo3-ffi-60
+3a274358c79264\build-script
+-build` (exit code: 1)
+  --- stdout
+  cargo:rerun-if-env-change
+d=PYO3_CROSS
+  cargo:rerun-if-env-change
+d=PYO3_CROSS_LIB_DIR
+  cargo:rerun-if-env-change
+d=PYO3_CROSS_PYTHON_VERSION
+  cargo:rerun-if-env-change
+d=PYO3_CROSS_PYTHON_IMPLEME
+NTATION
+  cargo:rerun-if-env-change
+d=PYO3_PRINT_CONFIG
+  cargo:rerun-if-env-change
+d=PYO3_USE_ABI3_FORWARD_COM
+PATIBILITY
+
+  --- stderr
+  error: the configured 
+Python interpreter version 
+(3.14) is newer than 
+PyO3's maximum supported 
+version (3.12)
+  = help: please check if 
+an updated version of PyO3 
+is available. Current 
+version: 0.20.3
+  = help: set PYO3_USE_ABI3
+_FORWARD_COMPATIBILITY=1 
+to suppress this check and 
+build anyway using the 
+stable ABI

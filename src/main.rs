@@ -1,7 +1,7 @@
-use hyperion_adco::data::realtime::OandaStream;
-use hyperion_adco::data::candle_builder::CandleBuilder;
-use hyperion_adco::engine::execution::ExecutionEngine;
-use hyperion_adco::routing::SchurRouter;
+use hyperion_sentinel::data::realtime::OandaStream;
+use hyperion_sentinel::data::candle_builder::CandleBuilder;
+use hyperion_sentinel::engine::execution::ExecutionEngine;
+use hyperion_sentinel::routing::SchurRouter;
 
 fn main() {
     println!("🚀 Starting Hyperion Orchestrator...");
@@ -12,7 +12,7 @@ fn main() {
 
     while let Some(tick) = stream.next_tick() {
         if let Some(candle) = builder.update(tick.price, tick.time) {
-            let pattern = candle.pattern;
+            let pattern = candle.pattern.clone();
             let time = candle.time;
 
             if let Some(signal) = engine.process_candle(candle) {

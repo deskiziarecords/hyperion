@@ -21,10 +21,10 @@ impl Detector {
         let range = candle.high - candle.low;
         let delta = (candle.close - candle.open).abs();
 
-        let signal = if let Some(last) = self.last_pattern {
-            match (last, candle.pattern) {
-                (Pattern::U, Pattern::D) => Some("REVERSAL_DOWN"),
-                (Pattern::D, Pattern::U) => Some("REVERSAL_UP"),
+        let signal = if let Some(ref last) = self.last_pattern {
+            match (last.name.as_str(), candle.pattern.name.as_str()) {
+                ("U", "D") => Some("REVERSAL_DOWN"),
+                ("D", "U") => Some("REVERSAL_UP"),
                 _ if range > self.prev_range * 1.5 && self.prev_range > 0.0 => Some("VOLATILITY_EXPANSION"),
                 _ if delta > self.prev_delta * 1.5 && self.prev_delta > 0.0 => Some("MOMENTUM_SPIKE"),
                 _ => None,
@@ -33,7 +33,7 @@ impl Detector {
             None
         };
 
-        self.last_pattern = Some(candle.pattern);
+        self.last_pattern = Some(candle.pattern.clone());
         self.prev_range = range;
         self.prev_delta = delta;
 
