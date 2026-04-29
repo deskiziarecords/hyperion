@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 pub trait AdelicComponent {
     fn is_coherent(&self, rho: f64) -> bool;
@@ -56,8 +57,8 @@ pub struct MarketContext {
     pub irl_fvg: f64,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
 #[pyclass]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
 pub enum Phase {
     Accumulation,
     Manipulation,
@@ -65,46 +66,91 @@ pub enum Phase {
     Expansion,
     Retracement,
     Reversal,
+    Consolidation,
     Flat,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+impl fmt::Display for Phase {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            Phase::Accumulation => "ACCUMULATION",
+            Phase::Manipulation => "MANIPULATION",
+            Phase::Distribution => "DISTRIBUTION",
+            Phase::Expansion => "EXPANSION",
+            Phase::Retracement => "RETRACEMENT",
+            Phase::Reversal => "REVERSAL",
+            Phase::Consolidation => "CONSOLIDATION",
+            Phase::Flat => "FLAT",
+        };
+        write!(f, "{}", s)
+    }
+}
+
 #[pyclass]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum Action {
     Buy,
     Sell,
     Flat,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+impl fmt::Display for Action {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            Action::Buy => "BUY",
+            Action::Sell => "SELL",
+            Action::Flat => "FLAT",
+        };
+        write!(f, "{}", s)
+    }
+}
+
 #[pyclass]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Bar {
+    #[pyo3(get)]
     pub open: f64,
+    #[pyo3(get)]
     pub high: f64,
+    #[pyo3(get)]
     pub low: f64,
+    #[pyo3(get)]
     pub close: f64,
+    #[pyo3(get)]
     pub volume: f64,
+    #[pyo3(get)]
     pub ts: i64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
 #[pyclass]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Signal {
+    #[pyo3(get)]
     pub action: Action,
+    #[pyo3(get)]
     pub size: f64,
+    #[pyo3(get)]
     pub phase: Phase,
+    #[pyo3(get)]
     pub kill_zone: bool,
+    #[pyo3(get)]
     pub timestamp: f64,
+    #[pyo3(get)]
     pub price: Option<f64>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
 #[pyclass]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Order {
+    #[pyo3(get)]
     pub id: String,
+    #[pyo3(get)]
     pub action: Action,
+    #[pyo3(get)]
     pub size: f64,
+    #[pyo3(get)]
     pub ref_price: f64,
+    #[pyo3(get)]
     pub timestamp: f64,
 }
 

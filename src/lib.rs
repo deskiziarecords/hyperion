@@ -3,6 +3,14 @@ pub mod types;
 pub mod continuum;
 pub mod routing;
 pub mod brokers;
+pub mod config;
+pub mod state;
+pub mod phase;
+pub mod indicators;
+pub mod kill_zone;
+pub mod urol;
+pub mod ipda;
+pub mod aecabi;
 
 pub mod data {
     pub mod candle_builder;
@@ -15,7 +23,7 @@ pub mod engine {
 }
 
 use pyo3::prelude::*;
-use crate::types::Candle;
+use crate::types::{Candle, Bar, Signal};
 use crate::data::realtime::OandaStream;
 use crate::data::candle_builder::CandleBuilder;
 use crate::engine::execution::ExecutionEngine;
@@ -36,13 +44,15 @@ pub struct SentinelEngine {
     shared_state: Arc<RwLock<ExecutionEngine>>,
     is_running: Arc<RwLock<bool>>,
     broker: Option<Arc<dyn ExchangeClient>>,
+    redis_url: String,
+    adelic_state: Option<crate::state::SharedState>,
 }
 
 #[pymethods]
 impl SentinelEngine {
     #[new]
-    #[pyo3(signature = (api_key="".to_string(), symbol="EUR/USD".to_string(), use_bitget=false))]
-    fn new(api_key: String, symbol: String, use_bitget: bool) -> Self {
+    #[pyo3(signature = (api_key="".to_string(), symbol="EUR/USD".to_string(), use_bitget=false, redis_url="redis://127.0.0.1/".to_string()))]
+    fn new(api_key: String, symbol: String, use_bitget: bool, redis_url: String) -> Self {
         // Load .env if it exists
         let _ = dotenvy::dotenv();
 
@@ -68,10 +78,12 @@ impl SentinelEngine {
             shared_state: Arc::new(RwLock::new(ExecutionEngine::new(100))),
             is_running: Arc::new(RwLock::new(false)),
             broker,
+            redis_url,
+            adelic_state: None,
         }
     }
 
-    fn start(&self) {
+    fn start(&mut self) {
         let mut running = self.is_running.write();
         if *running {
             return;
@@ -138,6 +150,87 @@ impl SentinelEngine {
         *running = false;
     }
 
+    fn start_adelic(&mut self) {
+        let mut running = self.is_running.write();
+        if *running {
+            return;
+        }
+        *running = true;
+
+        let redis_url = self.redis_url.clone();
+        let adelic_state = Arc::new(tokio::sync::RwLock::new(crate::state::GlobalState::default()));
+        self.adelic_state = Some(adelic_state.clone());
+
+        let is_running = Arc::clone(&self.is_running);
+
+        thread::spawn(move || {
+            let rt = tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+
+            rt.block_on(async {
+                println!("🌐 [QUIMERIA] Starting Adelic Pipeline on {}...", redis_url);
+
+                let client = match redis::Client::open(redis_url) {
+                    Ok(c) => c,
+                    Err(e) => {
+                        println!("❌ [QUIMERIA] Redis connection failed: {}", e);
+                        return;
+                    }
+                };
+
+                let con = match client.get_multiplexed_tokio_connection().await {
+                    Ok(c) => c,
+                    Err(e) => {
+                        println!("❌ [QUIMERIA] Multiplexed connection failed: {}", e);
+                        return;
+                    }
+                };
+
+                // Spawn UROL Ingestion
+                let urol_con = con.clone();
+                let urol_state = adelic_state.clone();
+                tokio::spawn(async move {
+                    if let Err(e) = crate::urol::run_ingestion(urol_con, urol_state).await {
+                        println!("❌ [UROL] Ingestion error: {}", e);
+                    }
+                });
+
+                // Spawn UROL Watchdog
+                let watchdog_con = con.clone();
+                let watchdog_state = adelic_state.clone();
+                tokio::spawn(async move {
+                    if let Err(e) = crate::urol::run_watchdog(watchdog_con, watchdog_state).await {
+                        println!("❌ [WATCHDOG] error: {}", e);
+                    }
+                });
+
+                // Spawn IPDA Core
+                let ipda_con = con.clone();
+                let ipda_state = adelic_state.clone();
+                tokio::spawn(async move {
+                    if let Err(e) = crate::ipda::run(ipda_con, ipda_state).await {
+                        println!("❌ [IPDA] error: {}", e);
+                    }
+                });
+
+                // Spawn AECABI Gateway
+                let aecabi_con = con.clone();
+                tokio::spawn(async move {
+                    if let Err(e) = crate::aecabi::run(aecabi_con).await {
+                        println!("❌ [AECABI] error: {}", e);
+                    }
+                });
+
+                while *is_running.read() {
+                    tokio::time::sleep(Duration::from_millis(100)).await;
+                }
+                println!("🛑 [QUIMERIA] Adelic Pipeline Stopped.");
+            });
+        });
+    }
+
     fn get_latest_bars(&self, lookback: usize) -> Vec<Candle> {
         let engine = self.shared_state.read();
         let skip = engine.state.candles.len().saturating_sub(lookback);
@@ -150,7 +243,7 @@ impl SentinelEngine {
         
         let action = if signal == "BUY" { Action::Buy } else { Action::Sell };
         let order = Order {
-            id: format!("ord_{}", Utc::now().timestamp_ms()),
+            id: format!("ord_{}", Utc::now().timestamp_millis()),
             action,
             size,
             ref_price: 0.0, // Should ideally be current market price
@@ -180,9 +273,14 @@ impl SentinelEngine {
 }
 
 #[pymodule]
-fn hyperion_sentinel(_py: Python, m: &PyModule) -> PyResult<()> {
+fn quimeria_hyperion(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<SentinelEngine>()?;
     m.add_class::<Candle>()?;
     m.add_class::<types::Pattern>()?;
+    m.add_class::<Bar>()?;
+    m.add_class::<Signal>()?;
+    m.add_class::<Order>()?;
+    m.add_class::<types::Action>()?;
+    m.add_class::<types::Phase>()?;
     Ok(())
 }

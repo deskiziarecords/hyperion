@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createChart, ColorType } from 'lightweight-charts';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, ShieldCheck, Zap, TrendingUp, TrendingDown, Terminal, Info, AlertTriangle } from 'lucide-react';
+import { Activity, ShieldCheck, Zap, TrendingUp, TrendingDown, Terminal, Info, AlertTriangle, Cpu, Layers, Link2 } from 'lucide-react';
 
 const App = () => {
     const chartContainerRef = useRef();
@@ -93,7 +93,7 @@ const App = () => {
             <div className="w-1/4 flex flex-col gap-4">
                 {/* Header Card */}
                 <div className="glass-card p-6 rounded-2xl">
-                    <h1 className="text-2xl font-bold glimmer-text mb-2">HYPERION SENTINEL</h1>
+                    <h1 className="text-2xl font-bold glimmer-text mb-2">QUIMERIA-HYPERION</h1>
                     <div className="flex items-center gap-2">
                         <div className={`w-2 h-2 rounded-full ${status === 'online' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
                         <span className="text-xs uppercase tracking-widest text-slate-400 font-medium">System {status}</span>
@@ -145,6 +145,25 @@ const App = () => {
                                     {data?.is_legal ? "λ6 Displacement Clear" : "Volatility Limit Violation"}
                                 </p>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Adelic Pipeline Status */}
+                    <div className="grid grid-cols-3 gap-2 mt-2">
+                        <div className="bg-slate-900/50 p-2 rounded-lg border border-white/5 flex flex-col items-center">
+                            <Cpu size={14} className="text-indigo-400 mb-1" />
+                            <span className="text-[10px] text-slate-500 font-bold uppercase">UROL</span>
+                            <div className={`w-1.5 h-1.5 rounded-full ${data?.adelic_active ? 'bg-green-500' : 'bg-slate-700'} mt-1`} />
+                        </div>
+                        <div className="bg-slate-900/50 p-2 rounded-lg border border-white/5 flex flex-col items-center">
+                            <Layers size={14} className="text-indigo-400 mb-1" />
+                            <span className="text-[10px] text-slate-500 font-bold uppercase">IPDA</span>
+                            <div className={`w-1.5 h-1.5 rounded-full ${data?.adelic_active ? 'bg-green-500' : 'bg-slate-700'} mt-1`} />
+                        </div>
+                        <div className="bg-slate-900/50 p-2 rounded-lg border border-white/5 flex flex-col items-center">
+                            <Link2 size={14} className="text-indigo-400 mb-1" />
+                            <span className="text-[10px] text-slate-500 font-bold uppercase">AECABI</span>
+                            <div className={`w-1.5 h-1.5 rounded-full ${data?.adelic_active ? 'bg-green-500' : 'bg-slate-700'} mt-1`} />
                         </div>
                     </div>
 

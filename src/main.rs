@@ -1,10 +1,10 @@
-use hyperion_sentinel::data::realtime::OandaStream;
-use hyperion_sentinel::data::candle_builder::CandleBuilder;
-use hyperion_sentinel::engine::execution::ExecutionEngine;
-use hyperion_sentinel::routing::SchurRouter;
+use quimeria_hyperion::data::realtime::OandaStream;
+use quimeria_hyperion::data::candle_builder::CandleBuilder;
+use quimeria_hyperion::engine::execution::ExecutionEngine;
+use quimeria_hyperion::routing::SchurRouter;
 
 fn main() {
-    println!("🚀 Starting Hyperion Orchestrator...");
+    println!("🚀 Starting QUIMERIA-HYPERION Orchestrator...");
 
     let mut stream = OandaStream::new();
     let mut builder = CandleBuilder::new();
@@ -28,5 +28,5 @@ fn main() {
         }
     }
 
-    println!("✅ Hyperion execution cycle complete.");
+    println!("✅ QUIMERIA-HYPERION execution cycle complete.");
 }

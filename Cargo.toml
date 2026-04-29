@@ -1,10 +1,10 @@
 [package]
-name = "hyperion-sentinel"
+name = "quimeria-hyperion"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "hyperion_sentinel"
+name = "quimeria_hyperion"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
@@ -24,4 +24,4 @@ base64 = "0.21"
 anyhow = "1.0"
 tracing = "0.1"
 dotenvy = "0.15"
-parking_lot_rt = { version = "0.12", package = "parking_lot" } # ensure consistency
+redis = { version = "0.24", features = ["tokio-comp", "streams", "json"] }
