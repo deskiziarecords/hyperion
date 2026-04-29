@@ -2,12 +2,12 @@ use crate::types::*;
 
 pub struct HamiltonianEngine {
     pub energy: f64,
-    pub state: ContinuumState,
+    pub state: Phase,
 }
 
 impl HamiltonianEngine {
     pub fn new() -> Self {
-        Self { energy: 0.0, state: ContinuumState::Consolidation }
+        Self { energy: 0.0, state: Phase::Consolidation }
     }
 
     pub fn compute_displacement_veto(&self, frame: &PriceFrame) -> bool {
@@ -21,16 +21,16 @@ impl HamiltonianEngine {
 
     pub fn update_state(&mut self, price: f64, context: &MarketContext, veto: bool) {
         match self.state {
-            ContinuumState::Consolidation if !veto && self.energy > 0.85 => {
-                self.state = ContinuumState::Expansion;
+            Phase::Consolidation if !veto && self.energy > 0.85 => {
+                self.state = Phase::Expansion;
                 self.energy = 0.0; 
             },
-            ContinuumState::Expansion if (price - context.erl_target).abs() < 0.0005 => {
-                self.state = ContinuumState::Reversal;
+            Phase::Expansion if (price - context.erl_target).abs() < 0.0005 => {
+                self.state = Phase::Reversal;
             },
             _ => {
                 if (price - context.eq_50).abs() < 0.0002 {
-                    self.state = ContinuumState::Consolidation;
+                    self.state = Phase::Consolidation;
                 }
             }
         }

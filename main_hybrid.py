@@ -13,9 +13,9 @@ from datetime import datetime
 
 # --- IMPORT RUST SENTINEL ---
 try:
-    import hyperion_sentinel as sentinel
+    import quimeria_hyperion as sentinel
 except ImportError:
-    print("CRITICAL: Run 'maturin develop' in /hyperion/ first.")
+    print("CRITICAL: Run 'maturin develop' first.")
     exit(1)
 
 # --- IMPORT JAX BRAIN ---
@@ -23,7 +23,7 @@ from logic.adelic_koopman_ipda_synchronizer import AdelicKoopmanSynchronizer
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
-logger = logging.getLogger("GMOS_HYBRID")
+logger = logging.getLogger("QUIMERIA_HYBRID")
 
 # FastAPI App
 app = FastAPI()
@@ -72,14 +72,12 @@ class GMOSOrchestrator:
         _ = self.brain.compute_sync(dummy_data)
         logger.info("JAX Kernels Hot and Ready.")
 
-        # Initialize the OLD Sentinel (Rust) - NO 'use_bitget' argument
-        # Based on inspection, it needs api_key and symbol
-        logger.info("Initializing Rust Sentinel (Simulation Mode)...")
+        # Initialize the QUIMERIA Sentinel (Rust)
+        logger.info("Initializing QUIMERIA-HYPERION Sentinel...")
         try:
-            self.engine = sentinel.SentinelEngine("DEMO_KEY", "BTC/USDT")
-        except TypeError as e:
+            self.engine = sentinel.SentinelEngine("DEMO_KEY", "BTC/USDT", False, "redis://127.0.0.1/")
+        except Exception as e:
             logger.error(f"Failed to init Sentinel: {e}")
-            # Fallback to even older signature if needed
             self.engine = sentinel.SentinelEngine()
 
         self.price_history = []
@@ -125,7 +123,7 @@ class GMOSOrchestrator:
                                 signal = "FLAT"
                                 if stability > 0.85:
                                     signal = "BUY" if bias > 0 else "SELL"
-                                    # We can tell Rust to execute (simulation mode)
+                                    # We can tell Rust to execute
                                     try:
                                         self.engine.execute_trade(signal, float(q_t_size))
                                     except:
@@ -142,6 +140,7 @@ class GMOSOrchestrator:
                                     "stability": float(stability),
                                     "signal": signal,
                                     "is_legal": True,
+                                    "adelic_active": True
                                 }
                                 await manager.broadcast(payload)
 
@@ -154,11 +153,13 @@ class GMOSOrchestrator:
                 await asyncio.sleep(5)
 
     async def run_production_loop(self):
-        # We start the Rust engine just to keep it running (for simulation prints)
+        # We start the Rust engine and the Adelic pipeline
         try:
+            logger.info("🚀 [QUIMERIA] Starting Adelic Pipeline and Engine...")
             self.engine.start()
-        except:
-            pass
+            self.engine.start_adelic()
+        except Exception as e:
+            logger.error(f"Failed to start Adelic pipeline: {e}")
         
         # Core Bitget streamer runs in its own task
         await self.run_bitget_ws()
@@ -170,5 +171,5 @@ async def startup_event():
     asyncio.create_task(orchestrator.run_production_loop())
 
 if __name__ == "__main__":
-    logger.info("🚀 Launching Hyperion Hybrid Server on http://localhost:8000")
+    logger.info("🚀 Launching QUIMERIA-HYPERION Hybrid Server on http://localhost:8000")
     uvicorn.run(app, host="0.0.0.0", port=8000)

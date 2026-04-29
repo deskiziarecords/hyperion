@@ -158,12 +158,12 @@ impl ExchangeClient for BitgetClient {
             .send()
             .await?;
 
-        if res.status().is_success() {
-            let text = res.text().await?;
+        let status = res.status();
+        let text = res.text().await?;
+        if status.is_success() {
             Ok(format!("BITGET-SUCCESS-{}", text))
         } else {
-            let err_text = res.text().await?;
-            Err(anyhow!("Bitget Order Error: {} - {}", res.status(), err_text))
+            Err(anyhow!("Bitget Order Error: {} - {}", status, text))
         }
     }
 
