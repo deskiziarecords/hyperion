@@ -7,14 +7,37 @@ Cargo.lock
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.flakes/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 .env
 .venv
 venv/
 ENV/
+env/
 .pytest_cache/
 .mypy_cache/
+.pyre_configuration
+.ruff_cache/
 
-# Node / Vite (Dashboard)
+# Node / Frontend (Dashboard)
+node_modules/
 dashboard/node_modules/
 dashboard/dist/
 dashboard/.env.local
@@ -22,18 +45,23 @@ dashboard/.env.*.local
 dashboard/npm-debug.log*
 dashboard/yarn-debug.log*
 dashboard/yarn-error.log*
+dashboard/pnpm-debug.log*
 
 # OS / IDE
 .DS_Store
 Thumbs.db
+desktop.ini
 .vscode/
 .idea/
 *.swp
 *.swo
+*.sublime-project
+*.sublime-workspace
 
-# Project specific
+# Project Specific Logs & Artifacts
 build_log.txt
 build_output.txt
 maturin_log.txt
 test_bitget_ws.py
 *.zip
+*.log
