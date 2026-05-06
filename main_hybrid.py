@@ -10,6 +10,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from datetime import datetime
+import MetaTrader5 as mt5
 
 # --- IMPORT RUST SENTINEL ---
 try:
@@ -72,6 +73,13 @@ class GMOSOrchestrator:
         _ = self.brain.compute_sync(dummy_data)
         logger.info("JAX Kernels Hot and Ready.")
 
+        # Initialize MT5
+        if not mt5.initialize():
+            logger.error(f"MT5 initialization failed: {mt5.last_error()}")
+        else:
+            mt5.symbol_select("EURUSD", True)
+            logger.info("MT5 Initialized Successfully for Paper Trading.")
+
         # Initialize the QUIMERIA Sentinel (Rust)
         logger.info("Initializing QUIMERIA-HYPERION Sentinel...")
         try:
@@ -128,6 +136,34 @@ class GMOSOrchestrator:
                                         self.engine.execute_trade(signal, float(q_t_size))
                                     except:
                                         pass
+                                    
+                                    # Execute on MT5
+                                    try:
+                                        action = mt5.ORDER_TYPE_BUY if signal == "BUY" else mt5.ORDER_TYPE_SELL
+                                        tick = mt5.symbol_info_tick("EURUSD")
+                                        if tick:
+                                            price = tick.ask if action == mt5.ORDER_TYPE_BUY else tick.bid
+                                            request = {
+                                                "action": mt5.TRADE_ACTION_DEAL,
+                                                "symbol": "EURUSD",
+                                                "volume": 0.01,
+                                                "type": action,
+                                                "price": price,
+                                                "deviation": 20,
+                                                "magic": 234000,
+                                                "comment": "Hyperion Paper",
+                                                "type_time": mt5.ORDER_TIME_GTC,
+                                                "type_filling": mt5.ORDER_FILLING_IOC,
+                                            }
+                                            result = mt5.order_send(request)
+                                            if result and result.retcode != mt5.TRADE_RETCODE_DONE:
+                                                logger.warning(f"MT5 Order Failed: {result.retcode} - {result.comment}")
+                                            elif result:
+                                                logger.info(f"MT5 Order Placed: {signal} on EURUSD")
+                                        else:
+                                            logger.warning("MT5 Tick not found for EURUSD")
+                                    except Exception as e:
+                                        logger.error(f"MT5 Execution Error: {e}")
                                 
                                 # Broadcast to dashboard
                                 payload = {
