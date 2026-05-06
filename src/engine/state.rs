@@ -1,27 +1,22 @@
 use crate::types::Candle;
-use std::collections::VecDeque;
 
-pub struct MarketState {
-    pub window_size: usize,
-    pub candles: VecDeque<Candle>,
+pub struct EngineState {
+    pub candles: Vec<Candle>,
+    capacity: usize,
 }
 
-impl MarketState {
-    pub fn new(window_size: usize) -> Self {
+impl EngineState {
+    pub fn new(capacity: usize) -> Self {
         Self {
-            window_size,
-            candles: VecDeque::with_capacity(window_size),
+            candles: Vec::with_capacity(capacity),
+            capacity,
         }
     }
 
-    pub fn update(&mut self, candle: Candle) {
-        if self.candles.len() >= self.window_size {
-            self.candles.pop_front();
+    pub fn push(&mut self, candle: Candle) {
+        self.candles.push(candle);
+        if self.candles.len() > self.capacity {
+            self.candles.remove(0);
         }
-        self.candles.push_back(candle);
-    }
-
-    pub fn last_candle(&self) -> Option<&Candle> {
-        self.candles.back()
     }
 }

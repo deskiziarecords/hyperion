@@ -18,8 +18,8 @@ fn main() {
             if let Some(signal) = engine.process_candle(candle) {
                 let (dark, lit) = SchurRouter::route(5_000_000.0);
                 println!(
-                    "[{}] ⚡ SIGNAL: {} | Pattern: {:?} | Route: Dark={:.0}, Lit={:.0}",
-                    time, signal, pattern, dark, lit
+                    "[{}] ⚡ SIGNAL: {:?} | Pattern: {:?} | Route: Dark={:.0}, Lit={:.0}",
+                    time, signal.action, pattern, dark, lit
                 );
             } else {
                 // Optional: print silent candles for debugging

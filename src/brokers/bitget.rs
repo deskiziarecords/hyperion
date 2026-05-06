@@ -144,8 +144,9 @@ impl ExchangeClient for BitgetClient {
             Action::Flat => return Err(anyhow!("Cannot submit FLAT order")),
         };
 
-        // Simplified payload for Bitget V2 API
-        let body = format!(r#"{{"symbol":"BTCUSDT","marginCoin":"USDT","side":"{}","orderType":"market","size":"{}"}}"#, side, order.size);
+        // Normalize: "BTC/USDT" → "BTCUSDT" for Bitget Mix API
+        let inst_id = order.symbol.replace('/', "");
+        let body = format!(r#"{{"symbol":"{}","marginCoin":"USDT","side":"{}","orderType":"market","size":"{}"}}"#, inst_id, side, order.size);
         let signature = self.generate_signature(&timestamp, method, path, &body);
 
         let res = self.client.post(format!("{}{}", self.base_url, path))

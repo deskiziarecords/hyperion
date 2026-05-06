@@ -207,5 +207,5 @@ async def startup_event():
     asyncio.create_task(orchestrator.run_production_loop())
 
 if __name__ == "__main__":
-    logger.info("🚀 Launching QUIMERIA-HYPERION Hybrid Server on http://localhost:8000")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    logger.info("🚀 Launching Hyperion Hybrid Server on http://localhost:8001")
+    uvicorn.run(app, host="0.0.0.0", port=8001)

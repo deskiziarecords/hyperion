@@ -1,10 +1,11 @@
 pub struct SchurRouter;
 
 impl SchurRouter {
-    /// Dispatches volume based on venue liquidity profiles
-    pub fn route(total_volume: f64) -> (f64, f64) {
-        let dark = total_volume * 0.618; // Primary Block
-        let lit = total_volume - dark;   // Complement
+    /// Splits order size between dark pool and lit venue using golden-ratio allocation.
+    /// Returns (dark_pool_size, lit_venue_size).
+    pub fn route(size: f64) -> (f64, f64) {
+        let dark = size * 0.618;
+        let lit = size - dark;
         (dark, lit)
     }
 }

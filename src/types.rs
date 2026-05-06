@@ -57,7 +57,7 @@ pub struct MarketContext {
     pub irl_fvg: f64,
 }
 
-#[pyclass]
+#[pyclass(eq, eq_int)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
 pub enum Phase {
     Accumulation,
@@ -86,7 +86,7 @@ impl fmt::Display for Phase {
     }
 }
 
-#[pyclass]
+#[pyclass(eq, eq_int)]
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum Action {
     Buy,
@@ -152,6 +152,8 @@ pub struct Order {
     pub ref_price: f64,
     #[pyo3(get)]
     pub timestamp: f64,
+    #[pyo3(get)]
+    pub symbol: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

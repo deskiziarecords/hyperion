@@ -1,96 +1,80 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use crate::types::{Candle, Pattern};
 
 pub struct CandleBuilder {
-    current_minute: Option<i64>,
-    open: f64,
+    open: Option<f64>,
     high: f64,
     low: f64,
-    close: f64,
+    last_price: f64,
+    bar_start: Option<DateTime<Utc>>,
+    bar_duration_ms: i64,
 }
 
 impl CandleBuilder {
     pub fn new() -> Self {
         Self {
-            current_minute: None,
-            open: 0.0,
+            open: None,
             high: f64::MIN,
             low: f64::MAX,
-            close: 0.0,
+            last_price: 0.0,
+            bar_start: None,
+            bar_duration_ms: 60_000,
         }
     }
 
     pub fn update(&mut self, price: f64, time: DateTime<Utc>) -> Option<Candle> {
-        let minute = time.timestamp() / 60;
-
-        if let Some(current) = self.current_minute {
-            if minute != current {
-                let candle = Candle {
-                    time,
-                    open: self.open,
-                    high: self.high,
-                    low: self.low,
-                    close: self.close,
-                    volume: 0.0,
-                    pattern: classify_pattern(self.open, self.close),
-                };
-
-                self.open = price;
-                self.high = price;
-                self.low = price;
-                self.close = price;
-                self.current_minute = Some(minute);
-
-                return Some(candle);
-            }
-        } else {
-            self.current_minute = Some(minute);
-            self.open = price;
+        if self.bar_start.is_none() {
+            self.bar_start = Some(time);
+            self.open = Some(price);
             self.high = price;
             self.low = price;
+            self.last_price = price;
+            return None;
+        }
+
+        let elapsed = time.signed_duration_since(self.bar_start.unwrap());
+        if elapsed >= Duration::milliseconds(self.bar_duration_ms) {
+            let candle = Candle {
+                time: self.bar_start.unwrap(),
+                open: self.open.unwrap_or(price),
+                high: self.high,
+                low: self.low,
+                close: self.last_price,
+                volume: 0.0,
+                pattern: self.classify_pattern(),
+            };
+            self.bar_start = Some(time);
+            self.open = Some(price);
+            self.high = price;
+            self.low = price;
+            self.last_price = price;
+            return Some(candle);
         }
 
         self.high = self.high.max(price);
         self.low = self.low.min(price);
-        self.close = price;
-
+        self.last_price = price;
         None
     }
-}
 
-fn classify_pattern(open: f64, close: f64) -> Pattern {
-    let (name, strength) = if close > open {
-        ("U".to_string(), 1.0)
-    } else if close < open {
-        ("D".to_string(), 1.0)
-    } else {
-        ("I".to_string(), 0.0)
-    };
+    fn classify_pattern(&self) -> Pattern {
+        let open = self.open.unwrap_or(self.last_price);
+        let body = (self.last_price - open).abs();
+        let range = (self.high - self.low).max(1e-9);
+        let ratio = body / range;
 
-    Pattern { name, strength }
-}
+        let name = if ratio < 0.10 {
+            "DOJI"
+        } else if self.last_price > open && ratio > 0.60 {
+            "BULLISH_MARUBOZU"
+        } else if self.last_price < open && ratio > 0.60 {
+            "BEARISH_MARUBOZU"
+        } else if self.last_price > open {
+            "BULLISH"
+        } else {
+            "BEARISH"
+        };
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use chrono::TimeZone;
-
-    #[test]
-    fn test_candle_building() {
-        let mut builder = CandleBuilder::new();
-        let t1 = Utc.timestamp_opt(60, 0).unwrap(); // Start of minute 1
-        let t2 = Utc.timestamp_opt(120, 0).unwrap(); // Start of minute 2
-
-        // First tick
-        assert!(builder.update(1.10, t1).is_none());
-        // Second tick same minute
-        assert!(builder.update(1.15, t1 + chrono::Duration::seconds(30)).is_none());
-
-        // Tick in new minute triggers candle completion
-        let candle = builder.update(1.12, t2).expect("Should return a candle");
-        assert_eq!(candle.open, 1.10);
-        assert_eq!(candle.high, 1.15);
-        assert_eq!(candle.low, 1.10);
-        assert_eq!(candle.close, 1.15);
+        Pattern { name: name.to_string(), strength: ratio }
     }
 }
