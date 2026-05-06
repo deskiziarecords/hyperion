@@ -239,15 +239,16 @@ impl SentinelEngine {
 
     fn execute_trade(&self, signal: String, size: f64) {
         let (dark, lit) = crate::routing::SchurRouter::route(size);
-        println!("🚀 [RUST EXECUTION] {} | Total Size: {:.0}", signal, size);
+        println!("🚀 [RUST EXECUTION] {} | Total Size: {:.4}", signal, size);
         
         let action = if signal == "BUY" { Action::Buy } else { Action::Sell };
         let order = Order {
             id: format!("ord_{}", Utc::now().timestamp_millis()),
             action,
             size,
-            ref_price: 0.0, // Should ideally be current market price
+            ref_price: 0.0,
             timestamp: Utc::now().timestamp_millis() as f64,
+            symbol: self.symbol.clone(),
         };
 
         if let Some(broker) = &self.broker {

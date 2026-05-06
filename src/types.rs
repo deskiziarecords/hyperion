@@ -152,6 +152,8 @@ pub struct Order {
     pub ref_price: f64,
     #[pyo3(get)]
     pub timestamp: f64,
+    #[pyo3(get)]
+    pub symbol: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
